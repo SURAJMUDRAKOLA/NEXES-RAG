@@ -1,0 +1,457 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.root{padding:.75rem 0;font-family:var(--font-sans)}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1.2rem}
+.tab{padding:5px 12px;border-radius:var(--border-radius-md);border:.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);transition:all .15s}
+.tab.active{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary);font-weight:500}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.85rem 1rem;margin-bottom:10px}
+.sh{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:4px;border-bottom:.5px solid var(--color-border-tertiary)}
+.op{border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.75rem .9rem;margin-bottom:8px}
+.op-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;flex-wrap:wrap;gap:6px}
+.op-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.op-api{font-size:11px;font-weight:500;padding:2px 8px;border-radius:9999px;white-space:nowrap}
+.groq{background:#0F3460;color:#7DD3FC}
+.gemini{background:#134E4A;color:#6EE7B7}
+.local{background:#1E1B4B;color:#A5B4FC}
+.free{background:#14532D;color:#86EFAC}
+.op-body{font-size:11px;color:var(--color-text-secondary);line-height:1.6}
+.op-limit{font-size:10px;font-family:var(--font-mono);color:var(--color-text-tertiary);margin-top:4px;padding:3px 6px;background:var(--color-background-secondary);border-radius:3px;display:inline-block}
+.op-warn{font-size:10px;color:#D97706;margin-top:4px;padding:3px 6px;background:#FFFBEB;border-radius:3px;display:inline-block}
+.row{padding:8px 0;border-bottom:.5px solid var(--color-border-tertiary)}
+.row:last-child{border-bottom:none}
+.rh{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap}
+.rt{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.rb{font-size:12px;color:var(--color-text-secondary);line-height:1.65}
+.note{font-size:11px;padding:5px 8px;background:var(--color-background-secondary);border-radius:3px;color:var(--color-text-secondary);line-height:1.5;margin-top:4px;font-family:var(--font-mono)}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px}
+.bt{background:#E1F5EE;color:#085041}
+.ba{background:#FAEEDA;color:#633806}
+.bc{background:#FAECE7;color:#712B13}
+.bg2{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.verdict{border-left:3px solid #7C3AED;background:var(--color-background-secondary);padding:.85rem 1rem;margin-bottom:10px;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0}
+.vt{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:5px}
+.vb{font-size:12px;color:var(--color-text-secondary);line-height:1.65}
+.warn-box{border-left:3px solid #D97706;background:#FFFBEB;padding:.85rem 1rem;margin-bottom:10px;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0}
+.budget-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:8px 0;border-bottom:.5px solid var(--color-border-tertiary);align-items:center}
+.budget-row:last-child{border-bottom:none}
+.br-left{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.br-right{font-size:12px;font-weight:500;color:var(--color-text-primary);text-align:right;font-family:var(--font-mono);white-space:nowrap}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.65rem;text-align:center}
+.stat-big{font-size:22px;font-weight:700;color:var(--color-text-primary);line-height:1}
+.stat-label{font-size:10px;color:var(--color-text-secondary);margin-top:3px}
+</style>
+
+<div class="root">
+<div class="tabs">
+  <button class="tab active" onclick="s('map')">Operation map</button>
+  <button class="tab" onclick="s('ingest')">Ingest pipeline</button>
+  <button class="tab" onclick="s('query')">Query pipeline</button>
+  <button class="tab" onclick="s('limits')">Real limits</button>
+  <button class="tab" onclick="s('budget')">Daily budget calc</button>
+  <button class="tab" onclick="s('rules')">Billing-safe rules</button>
+</div>
+
+<!-- OPERATION MAP -->
+<div id="map" class="panel active">
+  <div class="warn-box">
+    <div class="vt">⚠️ Important update on Gemini free limits (Dec 2025 cut)</div>
+    <div class="vb">Google cut Gemini free tier by 50–92% in December 2025. text-embedding-004 is now <strong>100 RPM and 1,000 RPD</strong> on free tier — NOT the 1500/min we planned on. This changes the embedding strategy. See the limits tab for the fix.</div>
+  </div>
+
+  <div class="card">
+    <div class="sh">Every RAG operation → which API → why</div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">1. Query classification</span><span class="op-api groq">GROQ</span></div>
+      <div class="op-body">Classify user query type (lookup/summarise/compare). Uses ~200 tokens. Fast, cheap, called once per query. Model: llama-3.1-8b-instant (fastest, 575 tok/s).</div>
+      <div class="op-limit">~200 tokens · llama-3.1-8b-instant · free</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">2. Query embedding</span><span class="op-api gemini">GEMINI</span></div>
+      <div class="op-body">Convert user's question into a 768-dim vector for pgvector search. One call per query, ~50 tokens. text-embedding-004 is free at 100 RPM.</div>
+      <div class="op-limit">1 call · text-embedding-004 · free · 100 RPM cap</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">3. HyDE expansion (complex queries only)</span><span class="op-api groq">GROQ</span></div>
+      <div class="op-body">Generate a hypothetical answer to embed instead of the raw query. Only fires for cross_doc/summarise types. ~300 tokens. Model: llama-3.1-8b-instant.</div>
+      <div class="op-limit">~300 tokens · conditional · llama-3.1-8b-instant</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">4. pgvector retrieval</span><span class="op-api local">SUPABASE</span></div>
+      <div class="op-body">Cosine similarity search via match_chunks() RPC. Runs inside Postgres. No external API call. Free forever. Uses the query embedding from step 2.</div>
+      <div class="op-limit">No API call · Supabase Postgres · always free</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">5. BM25 keyword search</span><span class="op-api local">SUPABASE</span></div>
+      <div class="op-body">Full-text search via match_chunks_fts() RPC in Postgres. No API call. Runs in parallel with vector search. Free forever.</div>
+      <div class="op-limit">No API call · Supabase Postgres · always free</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">6. Reranking</span><span class="op-api local">LOCAL — FLASHRANK</span></div>
+      <div class="op-body">FlashRank ms-marco-MiniLM runs locally in Python. No API call at all. 20ms, 92MB model download once. Zero cost forever.</div>
+      <div class="op-limit">No API call · local CPU · 20ms · $0 forever</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">7. MMR diversification</span><span class="op-api local">LOCAL — PYTHON</span></div>
+      <div class="op-body">Pure NumPy cosine similarity computation. No API call. 5ms. Runs on the embeddings already retrieved from pgvector.</div>
+      <div class="op-limit">No API call · NumPy · 5ms · $0 forever</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">8. Sufficiency check</span><span class="op-api groq">GROQ</span></div>
+      <div class="op-body">Ask LLM if retrieved context is enough to answer. ~400 tokens. Model: llama-3.1-8b-instant. Only fires if context might be insufficient — most simple lookups skip this.</div>
+      <div class="op-limit">~400 tokens · conditional · llama-3.1-8b-instant</div>
+    </div>
+
+    <div class="op" style="border-color:rgba(124,58,237,0.4)">
+      <div class="op-head"><span class="op-name">9. Final answer generation ★</span><span class="op-api groq">GROQ</span></div>
+      <div class="op-body">The main LLM call. Prompt = system + chunks (1000–2000 tokens) + history + query. Answer = 300–800 tokens streamed. Model: llama-3.3-70b-versatile. This is the biggest token consumer per query.</div>
+      <div class="op-limit">~2000 tokens in · ~500 tokens out · llama-3.3-70b-versatile</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">10. Related questions generation</span><span class="op-api groq">GROQ</span></div>
+      <div class="op-body">Generate 3 suggested follow-up questions for the insights panel. ~300 tokens total. Model: llama-3.1-8b-instant. Optional — skip this to save tokens if needed.</div>
+      <div class="op-limit">~300 tokens · optional · llama-3.1-8b-instant</div>
+    </div>
+  </div>
+</div>
+
+<!-- INGEST PIPELINE -->
+<div id="ingest" class="panel">
+  <div class="card">
+    <div class="sh">File ingestion — which API at each stage</div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">Parse PDF / PPTX / DOCX</span><span class="op-api local">LOCAL — PyMuPDF / python-pptx</span></div>
+      <div class="op-body">Pure Python libraries. Zero API calls. PyMuPDF extracts text and images from PDFs. python-pptx extracts slides. python-docx extracts Word paragraphs. All run inside the Celery worker process.</div>
+      <div class="op-limit">No API · local CPU · $0</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">OCR (scanned PDFs only)</span><span class="op-api local">LOCAL — PaddleOCR (lazy import)</span></div>
+      <div class="op-body">Only triggers when PyMuPDF extracts zero text (scanned PDF). Lazy imported — only loads into RAM when needed. OpenCV preprocesses image first (deskew, denoise). All local, all free.</div>
+      <div class="op-limit">Lazy import · 800MB RAM when active · local only</div>
+      <div class="op-warn">⚠ Only load on scanned PDFs. Check: if len(extracted_text) &lt; 50 → use OCR</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">Audio transcription</span><span class="op-api groq">GROQ — Whisper API</span></div>
+      <div class="op-body">Groq offers whisper-large-v3-turbo via API. Send audio bytes → get transcript. No local model download. Free on Groq free tier. Much better than running faster-whisper locally (saves 500MB RAM).</div>
+      <div class="op-limit">groq.audio.transcriptions.create() · free tier · no local RAM</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">Image captioning (diagrams)</span><span class="op-api groq">GROQ — Vision model</span></div>
+      <div class="op-body">For images embedded in documents: send image to Groq vision model to generate a text description. That description becomes the chunk content. Uses llama-3.2-11b-vision-preview on Groq.</div>
+      <div class="op-limit">~500 tokens per image · llama-3.2-11b-vision-preview · free tier</div>
+      <div class="op-warn">⚠ Only do this for images wider than 200px. Skip tiny icons/logos.</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">Contextual enrichment (per chunk)</span><span class="op-api groq">GROQ — Fast model</span></div>
+      <div class="op-body">One LLM call per chunk to prepend context sentence. 100-token output per chunk. Batched in groups of 25 with asyncio.gather(). For a 50-page PDF (~120 chunks) = 120 Groq calls × ~150 tokens = 18,000 tokens total.</div>
+      <div class="op-limit">~150 tokens per chunk · llama-3.1-8b-instant · batched 25 at a time</div>
+      <div class="op-warn">⚠ This is your biggest Groq token consumer at ingest. A 50-page PDF ≈ 18K tokens. Watch daily limits.</div>
+    </div>
+
+    <div class="op" style="border-color:rgba(20,184,166,0.4)">
+      <div class="op-head"><span class="op-name">Chunk embedding ★ most critical</span><span class="op-api gemini">GEMINI — text-embedding-004</span></div>
+      <div class="op-body">Convert each chunk's enriched text into a 768-dim vector. Batched in groups of 50. For 120 chunks = 3 batch calls. This is where the Dec 2025 Gemini limit cut matters — 1000 RPD means ~1000 embed calls per day. Plan your ingestion accordingly.</div>
+      <div class="op-limit">Batched 50 at a time · text-embedding-004 · 100 RPM / 1000 RPD</div>
+    </div>
+
+    <div class="op">
+      <div class="op-head"><span class="op-name">Document summary generation</span><span class="op-api groq">GROQ — Fast model</span></div>
+      <div class="op-body">After all chunks indexed: generate one summary per document (3-5 sentences). Uses first 8 chunks as input. ~800 tokens total. Stored in documents.summary column. Used for knowledge map and broad queries.</div>
+      <div class="op-limit">~800 tokens once per document · llama-3.1-8b-instant</div>
+    </div>
+  </div>
+</div>
+
+<!-- QUERY PIPELINE -->
+<div id="query" class="panel">
+  <div class="card">
+    <div class="sh">Token budget for one complete user query</div>
+
+    <div class="budget-row">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">Query classification</strong><br>llama-3.1-8b-instant · classify prompt + query</div>
+      <div class="br-right">~200 tokens<br><span style="font-size:10px;color:var(--color-text-tertiary)">GROQ 8B</span></div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">Query embedding</strong><br>text-embedding-004 · 1 API call</div>
+      <div class="br-right">1 RPD unit<br><span style="font-size:10px;color:var(--color-text-tertiary)">GEMINI</span></div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">Vector + BM25 retrieval</strong><br>Supabase Postgres RPC · no external API</div>
+      <div class="br-right">0 tokens<br><span style="font-size:10px;color:var(--color-text-tertiary)">FREE</span></div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">FlashRank reranking</strong><br>Local cross-encoder · no API</div>
+      <div class="br-right">0 tokens<br><span style="font-size:10px;color:var(--color-text-tertiary)">FREE</span></div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">Sufficiency check (if needed)</strong><br>llama-3.1-8b-instant · only on complex queries</div>
+      <div class="br-right">~400 tokens<br><span style="font-size:10px;color:var(--color-text-tertiary)">GROQ 8B</span></div>
+    </div>
+    <div class="budget-row" style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;border:none;margin-bottom:2px">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">Final answer generation ★</strong><br>llama-3.3-70b-versatile · system + chunks + history + query + answer</div>
+      <div class="br-right">~2500 tokens<br><span style="font-size:10px;color:var(--color-text-tertiary)">GROQ 70B</span></div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left"><strong style="color:var(--color-text-primary)">Related questions (optional)</strong><br>llama-3.1-8b-instant</div>
+      <div class="br-right">~300 tokens<br><span style="font-size:10px;color:var(--color-text-tertiary)">GROQ 8B</span></div>
+    </div>
+    <div class="budget-row" style="border-top:2px solid var(--color-border-primary);margin-top:4px;padding-top:10px">
+      <div class="br-left" style="font-size:13px;font-weight:500;color:var(--color-text-primary)">TOTAL per query</div>
+      <div class="br-right" style="font-size:13px">~3400 Groq tokens<br>1 Gemini embed call</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh">Latency breakdown — where time is spent</div>
+    <div class="budget-row">
+      <div class="br-left">Classify query</div>
+      <div class="br-right" style="color:#22C55E">~80ms</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Embed query (Gemini)</div>
+      <div class="br-right" style="color:#22C55E">~100ms</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">pgvector + BM25 parallel</div>
+      <div class="br-right" style="color:#22C55E">~25ms</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">FlashRank rerank</div>
+      <div class="br-right" style="color:#22C55E">~20ms</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Sufficiency check (if fires)</div>
+      <div class="br-right" style="color:#F59E0B">~120ms</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Groq first token (70B)</div>
+      <div class="br-right" style="color:#22C55E">~400ms</div>
+    </div>
+    <div class="budget-row" style="border-top:2px solid var(--color-border-primary);padding-top:10px">
+      <div class="br-left" style="font-weight:500;color:var(--color-text-primary)">Time to first token (typical)</div>
+      <div class="br-right" style="color:#7C3AED;font-size:14px;font-weight:600">~650ms</div>
+    </div>
+  </div>
+</div>
+
+<!-- REAL LIMITS -->
+<div id="limits" class="panel">
+  <div class="card">
+    <div class="sh">Groq free tier — actual limits 2025/2026</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-big">30</div><div class="stat-label">Requests/min (RPM)</div></div>
+      <div class="stat"><div class="stat-big">6K</div><div class="stat-label">Tokens/min (TPM)</div></div>
+      <div class="stat"><div class="stat-big">1K</div><div class="stat-label">Requests/day (RPD)</div></div>
+      <div class="stat"><div class="stat-big">500K</div><div class="stat-label">Tokens/day (for 70B)</div></div>
+    </div>
+    <div class="row">
+      <div class="rh"><span class="badge ba">The real bottleneck</span><span class="rt">6000 tokens per minute</span></div>
+      <div class="rb">Each final answer uses ~2500 tokens. At 6000 TPM limit, you can fire one query every ~25 seconds. For a demo with one person chatting, this is fine — they type slower than that. For two people simultaneously, you might hit 429. The fix: tenacity retries automatically wait and retry.</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span class="badge bt">Smart trick</span><span class="rt">Use 8B model for cheap operations to protect 70B budget</span></div>
+      <div class="rb">llama-3.1-8b-instant has the same 6K TPM limit but uses tokens 10x faster. Use 8B for: classification (200 tok), sufficiency (400 tok), enrichment (150 tok × chunks), related questions (300 tok). Only use 70B for the final answer. This maximises the quality where it matters.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh">Gemini free tier — after December 2025 cuts</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-big" style="color:#F59E0B">100</div><div class="stat-label">RPM (embedding)</div></div>
+      <div class="stat"><div class="stat-big" style="color:#F59E0B">1K</div><div class="stat-label">RPD (embedding)</div></div>
+      <div class="stat"><div class="stat-big" style="color:#22C55E">250K</div><div class="stat-label">Tokens/min (TPM)</div></div>
+    </div>
+    <div class="row">
+      <div class="rh"><span class="badge bc">Critical insight</span><span class="rt">1000 embed calls/day is the hard limit</span></div>
+      <div class="rb">A 50-page PDF produces ~120 chunks. Each chunk = 1 embed call (or batch of 50 = 1 call). So 120 chunks in 3 batch calls = 3 RPD units. You can index roughly 330 documents per day before hitting the limit. For a demo project indexing 5–20 documents total, this is a non-issue. The 1000 RPD resets daily at midnight Pacific time.</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span class="badge bt">Fix if you hit limits</span><span class="rt">Batch size 50 + Redis cache = most embeds never hit API</span></div>
+      <div class="rb">With the Redis embedding cache (SHA-256 hash per chunk), re-indexing the same document costs zero Gemini calls. Re-asking the same query costs zero Gemini calls (same query embedding served from cache). In practice, Gemini embed calls are far fewer than raw chunk count suggests.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh">What is completely free forever — no API, no limits</div>
+    <div class="op">
+      <div class="op-head"><span class="op-name">pgvector cosine search</span><span class="op-api local">SUPABASE FREE TIER</span></div>
+      <div class="op-body">HNSW index search. 500MB DB free. Runs in Postgres. Zero API calls.</div>
+    </div>
+    <div class="op">
+      <div class="op-head"><span class="op-name">BM25 full-text search</span><span class="op-api local">SUPABASE FREE TIER</span></div>
+      <div class="op-body">GIN index full-text search. Also in Postgres. Zero cost.</div>
+    </div>
+    <div class="op">
+      <div class="op-head"><span class="op-name">FlashRank reranking</span><span class="op-api local">LOCAL CPU</span></div>
+      <div class="op-body">92MB model, runs in Python, 20ms. No API call ever.</div>
+    </div>
+    <div class="op">
+      <div class="op-head"><span class="op-name">MMR diversification</span><span class="op-api local">LOCAL NUMPY</span></div>
+      <div class="op-body">5ms NumPy computation. Zero cost.</div>
+    </div>
+    <div class="op">
+      <div class="op-head"><span class="op-name">PDF / PPTX / DOCX parsing</span><span class="op-api local">LOCAL PYTHON</span></div>
+      <div class="op-body">PyMuPDF, python-pptx, python-docx. All local libraries, zero API.</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY BUDGET CALC -->
+<div id="budget" class="panel">
+  <div class="card">
+    <div class="sh">Demo day scenario — 5 people testing, 20 queries each = 100 queries</div>
+    <div class="budget-row">
+      <div class="br-left">Groq 70B tokens (final answers)<br><span style="font-size:11px;color:var(--color-text-tertiary)">100 queries × 2500 tokens</span></div>
+      <div class="br-right" style="color:#22C55E">250,000 tokens<br>Limit: 500K ✓</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Groq 8B tokens (classification + checks)<br><span style="font-size:11px;color:var(--color-text-tertiary)">100 queries × 900 tokens avg</span></div>
+      <div class="br-right" style="color:#22C55E">90,000 tokens<br>Separate limit ✓</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Groq requests/day<br><span style="font-size:11px;color:var(--color-text-tertiary)">100 queries × ~3 Groq calls each</span></div>
+      <div class="br-right" style="color:#F59E0B">~300 requests<br>Limit: 1000 ✓ tight</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Gemini embed calls<br><span style="font-size:11px;color:var(--color-text-tertiary)">100 queries × 1 embed each</span></div>
+      <div class="br-right" style="color:#22C55E">100 calls<br>Limit: 1000 ✓</div>
+    </div>
+    <div class="budget-row" style="border-top:2px solid var(--color-border-primary);padding-top:10px">
+      <div class="br-left" style="font-weight:500;color:var(--color-text-primary)">Result</div>
+      <div class="br-right" style="color:#22C55E;font-weight:500">Passes comfortably ✓</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh">Ingestion scenario — indexing 10 documents (5 pages each)</div>
+    <div class="budget-row">
+      <div class="br-left">Chunks created<br><span style="font-size:11px;color:var(--color-text-tertiary)">10 docs × ~25 chunks = 250 chunks</span></div>
+      <div class="br-right">250 chunks</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Gemini embed calls (batched 50)<br><span style="font-size:11px;color:var(--color-text-tertiary)">250 chunks ÷ 50 = 5 API calls</span></div>
+      <div class="br-right" style="color:#22C55E">5 calls<br>Limit: 1000/day ✓</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left">Groq enrichment calls<br><span style="font-size:11px;color:var(--color-text-tertiary)">250 chunks × 150 tokens</span></div>
+      <div class="br-right" style="color:#22C55E">37,500 tokens<br>Limit: 500K ✓</div>
+    </div>
+    <div class="budget-row" style="border-top:2px solid var(--color-border-primary);padding-top:10px">
+      <div class="br-left" style="font-weight:500;color:var(--color-text-primary)">Result</div>
+      <div class="br-right" style="color:#22C55E;font-weight:500">Well within limits ✓</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh">Danger zone — what would actually break limits</div>
+    <div class="budget-row">
+      <div class="br-left" style="color:#EF4444">Uploading a 500-page PDF (single document)<br><span style="font-size:11px;color:var(--color-text-tertiary)">~1200 chunks × 150 tok enrichment = 180K tokens in one job</span></div>
+      <div class="br-right" style="color:#F59E0B">Hits TPM limit<br>Celery retries ✓</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left" style="color:#EF4444">10 users all chatting at same time<br><span style="font-size:11px;color:var(--color-text-tertiary)">10 simultaneous Groq calls → 25,000 tokens in 1 min</span></div>
+      <div class="br-right" style="color:#EF4444">Hits 6K TPM<br>429 errors</div>
+    </div>
+    <div class="budget-row">
+      <div class="br-left" style="color:#EF4444">Re-indexing all documents with new embed model<br><span style="font-size:11px;color:var(--color-text-tertiary)">Would use all 1000 Gemini RPD in one session</span></div>
+      <div class="br-right" style="color:#EF4444">Hits RPD<br>Wait 24h</div>
+    </div>
+    <div class="note">Fix for all danger zones: tenacity retry with exponential backoff + slowapi rate limit (max 5 queries/min per user) + Redis cache on query embeddings</div>
+  </div>
+</div>
+
+<!-- BILLING-SAFE RULES -->
+<div id="rules" class="panel">
+  <div class="verdict">
+    <div class="vt">7 rules to guarantee zero billing, zero 429s, zero surprises</div>
+    <div class="vb">Follow all 7. They are ordered by importance — rule 1 matters most.</div>
+  </div>
+
+  <div class="card">
+    <div class="sh">The 7 rules</div>
+    <div class="row">
+      <div class="rh"><span style="background:#E1F5EE;color:#085041;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 1</span><span class="rt">Never enable billing on Google Cloud / AI Studio</span></div>
+      <div class="rb">As long as billing is disabled on your Google Cloud project, you physically cannot be charged. If you accidentally exceed a limit, you get a 429 error — not a bill. Go to console.cloud.google.com → Billing → confirm the project linked to your AI Studio key has NO billing account attached.</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span style="background:#E1F5EE;color:#085041;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 2</span><span class="rt">Groq has no billing — it is rate-limit only</span></div>
+      <div class="rb">Groq free tier has no credit card, no billing account, no pay-as-you-go. You literally cannot be charged. If you hit limits you get 429s, not charges. This is fundamentally different from OpenAI where going over free credit starts billing you.</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span style="background:#FAEEDA;color:#633806;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 3</span><span class="rt">Always batch Gemini embed calls — never 1 chunk at a time</span></div>
+      <div class="rb">1 batch call of 50 chunks costs 1 RPD unit. 50 individual calls cost 50 RPD units. Your 1000 RPD limit goes 50× further with batching. Always use batch_embed(texts_list) — never a loop calling embed_single() per chunk.</div>
+      <div class="note">batch_embed(texts)  ← correct: 1 API call for 50 chunks
+for t in texts: embed_single(t)  ← wrong: 50 API calls</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span style="background:#FAEEDA;color:#633806;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 4</span><span class="rt">Cache query embeddings in Redis — same query = zero Gemini calls</span></div>
+      <div class="rb">A user often asks similar questions. "Summarise the report" and "Give me a summary" embed to nearly identical vectors. Cache the embedding keyed on SHA-256(query_text). TTL 1 hour. A cache hit means zero Gemini API call, zero latency on embed step.</div>
+      <div class="note">KEY: embed:query:SHA256("what are the key findings")
+VALUE: [0.123, -0.456, ...] (768 floats, ~6KB JSON)</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span style="background:#FAEEDA;color:#633806;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 5</span><span class="rt">Add slowapi rate limit — max 5 chat requests per minute per user</span></div>
+      <div class="rb">@limiter.limit("5/minute") on the /chat endpoint. This prevents: (a) a user accidentally spamming queries, (b) someone stress-testing your demo. At 5 queries/min, you use 5 × 3400 = 17,000 tokens/min — still under Groq's 6K TPM per-model limit per call.</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span style="background:#FAECE7;color:#712B13;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 6</span><span class="rt">Cap document size at 50 pages for the demo</span></div>
+      <div class="rb">A 500-page PDF generates 1200+ chunks. Contextual enrichment = 1200 × 150 tokens = 180K tokens of Groq calls just for one document. Set MAX_PAGES_FOR_DEMO=50 in config. Show a clear error: "For this demo, files are limited to 50 pages." This keeps ingestion safely under limits.</div>
+    </div>
+    <div class="row">
+      <div class="rh"><span style="background:#FAECE7;color:#712B13;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px">RULE 7</span><span class="rt">Make related questions generation optional (toggle in settings)</span></div>
+      <div class="rb">The related questions step (300 tokens per query) is a nice-to-have. When Groq token budget is running low, disable it. Add ENABLE_RELATED_QUESTIONS=true in config. One env var toggle. Saves 10% of daily Groq token budget at zero quality cost to the core RAG answer.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh">Final .env settings to enforce all rules</div>
+    <div class="note"># Groq — no billing possible, just rate limits
+GROQ_API_KEY=gsk_...
+
+# Gemini — billing DISABLED on project (verify in Cloud Console)
+GEMINI_API_KEY=AIza...
+
+# Model routing
+LLM_PROVIDER=groq/llama-3.3-70b-versatile
+LLM_FAST_PROVIDER=groq/llama-3.1-8b-instant
+EMBED_MODEL=gemini/text-embedding-004
+EMBED_DIM=768
+RERANK_PROVIDER=flashrank
+
+# Safety caps
+MAX_FILE_PAGES=50
+ENABLE_RELATED_QUESTIONS=true
+EMBED_BATCH_SIZE=50
+
+# Rate limiting (per user per minute)
+CHAT_RATE_LIMIT=5/minute
+UPLOAD_RATE_LIMIT=10/hour</div>
+  </div>
+</div>
+</div>
+
+<script>
+function s(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</div>

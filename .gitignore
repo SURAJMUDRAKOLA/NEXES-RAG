@@ -1,0 +1,172 @@
+# ==============================================================================
+# Git Ignore Configuration for Universal RAG Bot (NEXUS)
+# Covers: Backend (Python/FastAPI), Frontend (Next.js/React), Docker, OS & IDEs
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment & Secrets (CRITICAL - NEVER COMMIT TO GITHUB)
+# ------------------------------------------------------------------------------
+.env
+.env.*
+*.env
+!.env.example
+!.env.template
+!.env*.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API Keys, Credentials, and Certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+credentials.json
+client_secrets.json
+service-account*.json
+firebase-adminsdk*.json
+
+# ------------------------------------------------------------------------------
+# 2. Python Backend & Virtual Environments
+# ------------------------------------------------------------------------------
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Type checking & linters
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*-checkpoint.ipynb
+
+# ------------------------------------------------------------------------------
+# 3. Node.js & Next.js Frontend
+# ------------------------------------------------------------------------------
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Next.js build and cache
+.next/
+out/
+.vercel
+
+# Yarn
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# TypeScript build info
+*.tsbuildinfo
+
+# ------------------------------------------------------------------------------
+# 4. Logs, Storage & Runtime Data
+# ------------------------------------------------------------------------------
+*.log
+logs/
+*.sqlite
+*.sqlite3
+*.db
+temp/
+tmp/
+*.tmp
+
+# Uploads & local file processing
+uploads/
+storage/
+temp_uploads/
+
+# Prompts & internal specs
+prompts/
+prompt.md.txt
+
+# ------------------------------------------------------------------------------
+# 5. Operating System Artifacts
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ------------------------------------------------------------------------------
+# 6. IDEs & Editors
+# ------------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo

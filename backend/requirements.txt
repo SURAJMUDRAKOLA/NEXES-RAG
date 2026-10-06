@@ -1,0 +1,58 @@
+# NEXUS Universal RAG Assistant — Backend Dependencies
+# Free-tier AI stack: Groq (LLM + Whisper) + Gemini (embeddings, REST)
+# Plan §15.1 + api_operation_mapping.html
+# Install: pip install -r requirements.txt
+
+# ── Web Framework ──────────────────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9        # file uploads
+sse-starlette>=2.1.0           # SSE streaming for chat
+slowapi>=0.1.9                 # rate limiting (Rule 5: 5/min per user)
+
+# ── Auth / Supabase ────────────────────────────────────────────────────────
+supabase>=2.4.0
+pydantic-settings>=2.2.0
+PyJWT>=2.8.0                   # JWT decode fallback
+
+# ── AI Providers (Groq + Gemini REST — NO OpenAI, NO LiteLLM) ─────────────
+groq>=0.9.0                    # LLM (llama-3.3-70b, 8B, vision) + Whisper transcription
+requests>=2.31.0               # Gemini embedding REST (embedder.py uses requests directly)
+
+# ── LangGraph RAG pipeline ─────────────────────────────────────────────────
+langgraph>=0.2.0               # stateful pipeline graph (classify→retrieve→rerank→generate)
+langchain-core>=0.2.0          # LangGraph dependency
+
+# ── Reranking (local, free, no API key, ~20ms) ────────────────────────────
+flashrank>=0.2.9               # ms-marco-MiniLM cross-encoder reranker
+
+# ── Document Parsing (all local, $0, no API) ──────────────────────────────
+pymupdf>=1.24.0                # PyMuPDF — primary PDF + image extraction (plan §7.1)
+pdfplumber>=0.11.0             # table extraction fallback
+python-docx>=1.1.0             # Word documents (.docx)
+python-pptx>=0.6.23            # PowerPoint (.pptx)
+openpyxl>=3.1.4                # Excel (.xlsx)
+pillow>=10.4.0                 # Image metadata fallback (ImageParser._pillow_fallback)
+
+# ── Algorithms ────────────────────────────────────────────────────────────
+numpy>=1.26.0                  # MMR diversity selection (§9.2)
+tenacity>=8.3.0                # Retry with exponential backoff (§11.1, §13.1)
+tiktoken>=0.7.0                # Token counting
+
+# ── Caching ───────────────────────────────────────────────────────────────
+redis>=5.0.0                   # Embedding + query cache (§9.3, Rule 4)
+
+# ── Background Tasks ──────────────────────────────────────────────────────
+celery>=5.4.0                  # Optional async worker (USE_CELERY=false by default)
+
+# ── Export ────────────────────────────────────────────────────────────────
+reportlab>=4.2.0               # PDF export (export.py router)
+
+# ── Utilities ─────────────────────────────────────────────────────────────
+httpx>=0.27.0                  # Large file HTTP PUT upload to Supabase Storage
+python-dotenv>=1.0.0           # .env loading
+
+# ── REMOVED (no longer used) ──────────────────────────────────────────────
+# litellm             — replaced by groq SDK (was causing AWS Bedrock/SageMaker warnings)
+# google-generativeai — embedder.py uses requests REST directly, SDK not needed
+# asyncpg             — all DB access via Supabase REST, no direct Postgres connection

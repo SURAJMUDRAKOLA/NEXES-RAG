@@ -1,0 +1,42 @@
+# Environment variables & secrets
+.env
+.env.*
+*.env
+!.env.example
+!.env.template
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# Logs & temp files
+*.log
+logs/
+temp/
+tmp/
+*.tmp
+uploads/
+storage/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
